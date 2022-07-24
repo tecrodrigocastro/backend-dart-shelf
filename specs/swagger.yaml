@@ -1,0 +1,12 @@
+openapi: 3.0.0
+info:
+  description: "API dart backend"
+  version: "1.0.10"
+  title: "Swagger Dart Test"
+servers:
+  - url: http://localhost:4466
+    description: Local server
+tags:
+- name: "user"
+  description: "Access to User"
+

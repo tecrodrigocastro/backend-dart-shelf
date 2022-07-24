@@ -54,9 +54,13 @@ class UserResource extends Resource {
       ModularArguments arguments, Injector injector) async {
     final userParams = (arguments.data as Map).cast<String, dynamic>();
     //userParams.remove('id');
+    final colums = userParams.keys
+        .where((key) => key != 'id' || key != 'password')
+        .map((key) => '$key=@$key')
+        .toList();
     final database = injector.get<RemoteDatabase>();
     final query = await database.query(
-        'UPDATE "User" SET name=@name, email=@email, password=@password WHERE id=@id RETURNING id, name, email, role',
+        'UPDATE "User" SET ${colums.join(',')} WHERE id=@id RETURNING id, name, email, role',
         variables: userParams);
     return Response.ok('Updated User: ${arguments.data}');
   }
