@@ -23,6 +23,6 @@ class DotEnvService {
   }
 
   String? operator [](String key) {
-    return _map[key];
+    return _map[key]?.trim();
   }
 }

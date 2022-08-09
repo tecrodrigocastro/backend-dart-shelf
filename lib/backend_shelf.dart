@@ -17,6 +17,8 @@ Middleware jsonResponse() {
 
       response = response.change(headers: {
         'content-type': 'application/json',
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "POST, GET, OPTIONS, PUT, DELETE, HEAD",
         ...response.headers,
       });
 

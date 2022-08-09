@@ -7,12 +7,39 @@ servers:
   - url: http://localhost:4246
     description: Local server
 tags:
+  - name: "auth"
+    description: "Access to Auth"
   - name: "user"
     description: "Access to User"
-  - name: "product"
-    description: "Access to Product"
 
 paths:
+  /auth/login:
+    get:
+      tags:
+        - "auth"
+      summary: login with credentials(email/password)
+      security:
+        - basicAuth: []     
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                  $ref: "#/components/schemas/Tokenization"
+        "404":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BackendException"
+        "403":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BackendException"
+
   /user/{id}:
     get: 
       tags:
@@ -133,6 +160,10 @@ paths:
                 $ref: "#/components/schemas/BackendException"
 
 components:
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
   schemas:
     User:
       type: object
@@ -171,3 +202,11 @@ components:
       properties:
         error:
           type: string
+    Tokenization:
+      type: object
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+
