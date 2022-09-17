@@ -2,9 +2,9 @@ openapi: 3.0.0
 info:
   description: "API in dart backend"
   version: "1.0.10"
-  title: "API RED RODRIGO"
+  title: "API ACADEMIA"
 servers:
-  - url: http://localhost:4246
+  - url: http://localhost:4245
     description: Local server
 tags:
   - name: "auth"
@@ -19,14 +19,69 @@ paths:
         - "auth"
       summary: login with credentials(email/password)
       security:
-        - basicAuth: []     
+        - basicAuth: []
       responses:
         "200":
           description: ""
           content:
             application/json:
               schema:
-                  $ref: "#/components/schemas/Tokenization"
+                $ref: "#/components/schemas/Tokenization"
+        "404":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BackendException"
+        "403":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BackendException"
+  /auth/check_token:
+    get:
+      tags:
+        - "auth"
+      summary: Check bearer token
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        "404":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BackendException"
+        "403":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BackendException"
+  /auth/refresh_token:
+    get:
+      tags:
+        - "auth"
+      summary: refresh bearer token
+      security:
+        - bearerRefreshAuth: []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tokenization"
         "404":
           description: ""
           content:
@@ -41,15 +96,17 @@ paths:
                 $ref: "#/components/schemas/BackendException"
 
   /user/{id}:
-    get: 
+    get:
       tags:
         - "user"
       summary: get user by id
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: id
           required: true
-          schema: 
+          schema:
             type: integer
       responses:
         "200":
@@ -57,22 +114,24 @@ paths:
           content:
             application/json:
               schema:
-                  $ref: "#/components/schemas/User"
+                $ref: "#/components/schemas/User"
         "404":
           description: ""
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/BackendException"
-    delete: 
+    delete:
       tags:
         - "user"
       summary: delete user by id
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: id
           required: true
-          schema: 
+          schema:
             type: integer
       responses:
         "200":
@@ -82,14 +141,14 @@ paths:
               schema:
                 type: object
                 properties:
-                  message: 
+                  message:
                     type: string
         "404":
           description: ""
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/BackendException"       
+                $ref: "#/components/schemas/BackendException"
   /user:
     get:
       tags:
@@ -117,8 +176,8 @@ paths:
       requestBody:
         content:
           application/json:
-            schema: 
-              $ref: '#/components/schemas/UserCreate'
+            schema:
+              $ref: "#/components/schemas/UserCreate"
       responses:
         "200":
           description: ""
@@ -138,11 +197,13 @@ paths:
       tags:
         - "user"
       summary: update user
+      security:
+        - bearerAuth: []
       requestBody:
         content:
           application/json:
-            schema: 
-              $ref: '#/components/schemas/User'
+            schema:
+              $ref: "#/components/schemas/User"
       responses:
         "200":
           description: ""
@@ -164,6 +225,16 @@ components:
     basicAuth:
       type: http
       scheme: basic
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "Auth header (Authorization) Access Token"
+    bearerRefreshAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "Refresh Token"
   schemas:
     User:
       type: object
@@ -209,4 +280,3 @@ components:
           type: string
         refresh_token:
           type: string
-

@@ -3,17 +3,20 @@ import 'dart:convert';
 
 import 'package:backend_shelf/src/core/services/bcrypt/bcrypt_service.dart';
 import 'package:backend_shelf/src/core/services/database/remote_database.dart';
+import 'package:backend_shelf/src/features/auth/guard/auth_guard.dart';
 import 'package:shelf_modular/shelf_modular.dart';
 import 'package:shelf/shelf.dart';
 
 class UserResource extends Resource {
   @override
   List<Route> get routes => [
-        Route.get('/user', _getAllUser),
-        Route.get('/user/:id', _getAllUserById),
+        Route.get('/user', _getAllUser, middlewares: [AuthGuard()]),
+        Route.get('/user/:id', _getAllUserById, middlewares: [AuthGuard()]),
         Route.post('/user', _createUser),
-        Route.put('/user', _updateUser),
-        Route.delete('/user/:id', _deleteUser),
+        Route.put('/user', _updateUser, middlewares: [AuthGuard()]),
+        Route.delete('/user/:id', _deleteUser, middlewares: [
+          AuthGuard(roles: ['admin'])
+        ]),
       ];
 
   FutureOr<Response> _getAllUser(Injector injector) async {
