@@ -94,6 +94,45 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/BackendException"
+  /auth/update_password:
+    put:
+      tags:
+        - "auth"
+      summary: update password
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+               password: 
+                 type: string
+               newPassword:
+                 type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        "404":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BackendException"
+        "403":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BackendException"
 
   /user/{id}:
     get:
@@ -245,11 +284,28 @@ components:
           type: string
         email:
           type: string
+        gender:
+          type: string
+        age:
+          type: integer
+        weith:
+          type: number
+        heigth:
+          type: number
+        goal:
+          type: string
+        level:
+          type: string
+          default: begginer
+          enum: 
+            - "begginer"
+            - "intermediate"
+            - "advance"
         role:
           type: string
           default: user
           enum:
-            - "dev"
+            - "user"
             - "admin"
             - "manager"
     UserCreate:
@@ -261,11 +317,28 @@ components:
           type: string
         password:
           type: string
+        gender:
+          type: string
+        age:
+          type: integer
+        weigth:
+          type: number
+        heigth:
+          type: number
+        goal:
+          type: string
+        level:
+          type: string
+          default: begginer
+          enum: 
+            - "begginer"
+            - "intermediate"
+            - "advance"
         role:
           type: string
           default: user
           enum:
-            - "dev"
+            - "user"
             - "admin"
             - "manager"
     BackendException:

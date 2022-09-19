@@ -22,8 +22,7 @@ class UserResource extends Resource {
   FutureOr<Response> _getAllUser(Injector injector) async {
     final database = injector.get<RemoteDatabase>();
 
-    final result =
-        await database.query('SELECT id, name, email, role FROM "User";');
+    final result = await database.query('SELECT * FROM "User";');
     //final userMap = result.map((element) => element['User']).first;
     final listUsers = result.map((e) => e['User']).toList();
     return Response.ok(jsonEncode(listUsers));
@@ -34,9 +33,8 @@ class UserResource extends Resource {
     final id = arguments.params['id'];
     final database = injector.get<RemoteDatabase>();
 
-    final result = await database.query(
-        'SELECT id, name, email, role FROM "User" WHERE id = @id;',
-        variables: {'id': id});
+    final result = await database
+        .query('SELECT * FROM "User" WHERE id = @id;', variables: {'id': id});
     final userMap = result.map((element) => element['User']).first;
     return Response.ok(jsonEncode(userMap));
   }
@@ -49,7 +47,7 @@ class UserResource extends Resource {
     //userParams.remove('id');
     final database = injector.get<RemoteDatabase>();
     final query = await database.query(
-      'INSERT INTO "User" (name, email, password) VALUES (@name, @email, @password) RETURNING id, name, email, role;',
+      'INSERT INTO "User" (name, email, password, gender, age, weigth, heigth, goal) VALUES (@name, @email, @password, @gender, @age, @weigth, @heigth, @goal) RETURNING id, name, email, role;',
       variables: userParams,
     );
     final userMap = query.map((e) => e['User']).first;

@@ -4,15 +4,27 @@ datasource db {
 }
 
 model User {
-    id       Int      @id @default(autoincrement())
+    id       Int           @id @default(autoincrement())
     name     String
-    email    String   @unique
+    email    String        @unique
     password String
-    role     UserRole @default(user)
+    gender   String
+    age      Int
+    weigth   Decimal
+    heigth   Decimal
+    goal     String
+    level    ActivityLevel @default(begginer)
+    role     UserRole      @default(user)
 }
 
 enum UserRole {
     admin
     user
     manager
+}
+
+enum ActivityLevel {
+    begginer
+    intermediate
+    advance
 }

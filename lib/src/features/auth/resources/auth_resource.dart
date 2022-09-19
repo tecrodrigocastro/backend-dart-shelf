@@ -12,14 +12,15 @@ class AuthResource extends Resource {
   @override
   List<Route> get routes => [
         //login
-        Route.get('/auth/login', _login),
+        Route.get('/login', _login),
         //refresh_token
-        Route.get('/auth/refresh_token', _refreshToken,
+        Route.get('/refresh_token', _refreshToken,
             middlewares: [AuthGuard(isRefreshToken: true)]),
         //check_token
-        Route.get('/auth/check_token', _checkToken, middlewares: [AuthGuard()]),
+        Route.get('/check_token', _checkToken, middlewares: [AuthGuard()]),
         //update password
-        Route.post('/auth/update_password', _updatePassword),
+        Route.put('/update_password', _updatePassword,
+            middlewares: [AuthGuard()]),
       ];
 
   FutureOr<Response> _login(Request request, Injector injector) async {
@@ -76,8 +77,31 @@ class AuthResource extends Resource {
     return Response.ok(jsonEncode({'message': 'ok'}));
   }
 
-  FutureOr<Response> _updatePassword() {
-    return Response.ok('');
+  FutureOr<Response> _updatePassword(
+      Injector injector, Request request, ModularArguments arguments) async {
+    final extractor = injector.get<RequestExtractor>();
+    final jwt = injector.get<JwtService>();
+    final database = injector.get<RemoteDatabase>();
+    final bcrypt = injector.get<BCryptService>();
+    final data = arguments.data as Map;
+    final token = extractor.getAuthorizationBearer(request);
+    var payload = jwt.getPayload(token);
+    final result = await database
+        .query('SELECT password FROM "User" WHERE id =@id;', variables: {
+      'id': payload['id'],
+    });
+    final password =
+        result.map((element) => element['User']).first!['password'];
+
+    if (!bcrypt.checkHash(data['password'], password)) {
+      return Response.forbidden(jsonEncode({'error': 'Senha invalida'}));
+    }
+    final queryUpdate = 'UPDATE "User" SET password=@password WHERE id=@id;';
+    await database.query(queryUpdate, variables: {
+      'id': payload['id'],
+      'password': bcrypt.generateHash(data['newPassword'])
+    });
+    return Response.ok(jsonEncode({'message': 'ok'}));
   }
 
   int _determineExpiration(Duration duration) {
