@@ -7,23 +7,23 @@ import 'package:backend_shelf/src/features/auth/models/tokenization.dart';
 
 import '../../../core/services/request_extractor/request_extractor.dart';
 
+abstract class AuthDatasource {
+  Future<Map> getIdAndRuleByEmail(String email);
+}
+
 class AuthRepository {
   final BCryptService bcrypt;
   final JwtService jwt;
-  final RemoteDatabase database;
-  AuthRepository(this.bcrypt, this.jwt, this.database);
+  final AuthDatasource datasource;
+  AuthRepository(this.datasource, this.bcrypt, this.jwt);
 
   Future<Tokenization> login(LoginCredential credential) async {
-    final result = await database.query(
-        'SELECT id, role, password FROM "User" WHERE email = @email;',
-        variables: {
-          'email': credential.email,
-        });
-    if (result.isEmpty) {
+    final userMap = await datasource.getIdAndRuleByEmail(credential.email);
+    if (userMap.isEmpty) {
       throw AuthException(403, 'User not found');
     }
-    final userMap = result.map((element) => element['User']).first;
-    if (!bcrypt.checkHash(credential.password, userMap!['password'])) {
+    // final userMap = result.map((element) => element['User']).first;
+    if (!bcrypt.checkHash(credential.password, userMap['password'])) {
       throw AuthException(403, 'Invalid Password');
     }
     final payload = userMap..remove('password');
