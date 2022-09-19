@@ -4,7 +4,9 @@ import 'package:backend_shelf/src/core/services/bcrypt/bcrypt_service.dart';
 import 'package:backend_shelf/src/core/services/database/remote_database.dart';
 import 'package:backend_shelf/src/core/services/jwt/jwt_service.dart';
 import 'package:backend_shelf/src/core/services/request_extractor/request_extractor.dart';
+import 'package:backend_shelf/src/features/auth/errors/errors.dart';
 import 'package:backend_shelf/src/features/auth/guard/auth_guard.dart';
+import 'package:backend_shelf/src/features/auth/repositories/auth_repository.dart';
 import 'package:shelf_modular/shelf_modular.dart';
 import 'package:shelf/shelf.dart';
 
@@ -24,27 +26,15 @@ class AuthResource extends Resource {
       ];
 
   FutureOr<Response> _login(Request request, Injector injector) async {
+    final authRepository = injector.get<AuthRepository>();
     final extractor = injector.get<RequestExtractor>();
-    final bcrypt = injector.get<BCryptService>();
-    final jwt = injector.get<JwtService>();
     final credential = extractor.getAuthorizationBasic(request);
-    final database = injector.get<RemoteDatabase>();
-    final result = await database.query(
-        'SELECT id, role, password FROM "User" WHERE email = @email;',
-        variables: {
-          'email': credential.email,
-        });
-    if (result.isEmpty) {
-      return Response.forbidden(jsonEncode({'error': 'User not found'}));
+    try {
+      final tokenization = await authRepository.login(credential);
+      return Response.ok(tokenization.toJson());
+    } on AuthException catch (e) {
+      return Response(e.statusCode, body: e.toJson());
     }
-    final userMap = result.map((element) => element['User']).first;
-    if (!bcrypt.checkHash(credential.password, userMap!['password'])) {
-      return Response.forbidden(jsonEncode({'error': 'Invalid Password'}));
-    }
-
-    final payload = userMap..remove('password');
-
-    return Response.ok(jsonEncode(generateToken(payload, jwt)));
   }
 
   Map generateToken(Map payload, JwtService jwt) {
