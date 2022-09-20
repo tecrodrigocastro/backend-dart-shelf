@@ -37,30 +37,14 @@ class AuthResource extends Resource {
     }
   }
 
-  Map generateToken(Map payload, JwtService jwt) {
-    payload['exp'] = _determineExpiration(Duration(minutes: 10));
-    final accessToken = jwt.generateToken(payload, 'accessToken');
-    payload['exp'] = _determineExpiration(Duration(days: 3));
-    final refreshToken = jwt.generateToken(payload, 'refreshToken');
-    return {
-      'access_token': accessToken,
-      'refresh_token': refreshToken,
-    };
-  }
-
   FutureOr<Response> _refreshToken(Injector injector, Request request) async {
     final extractor = injector.get<RequestExtractor>();
-    final jwt = injector.get<JwtService>();
+    final authRepository = injector.get<AuthRepository>();
 
     final token = extractor.getAuthorizationBearer(request);
-    var payload = jwt.getPayload(token);
-    final database = injector.get<RemoteDatabase>();
-    final result = await database
-        .query('SELECT id, role FROM "User" WHERE id =@id;', variables: {
-      'id': payload['id'],
-    });
-    payload = result.map((element) => element['User']).first!;
-    return Response.ok(jsonEncode(generateToken(payload, jwt)));
+
+    final tokenization = await authRepository.refreshToken(token);
+    return Response.ok(tokenization.toJson());
   }
 
   FutureOr<Response> _checkToken() {
@@ -69,35 +53,21 @@ class AuthResource extends Resource {
 
   FutureOr<Response> _updatePassword(
       Injector injector, Request request, ModularArguments arguments) async {
+    final authRepository = injector.get<AuthRepository>();
+
     final extractor = injector.get<RequestExtractor>();
-    final jwt = injector.get<JwtService>();
-    final database = injector.get<RemoteDatabase>();
-    final bcrypt = injector.get<BCryptService>();
     final data = arguments.data as Map;
     final token = extractor.getAuthorizationBearer(request);
-    var payload = jwt.getPayload(token);
-    final result = await database
-        .query('SELECT password FROM "User" WHERE id =@id;', variables: {
-      'id': payload['id'],
-    });
-    final password =
-        result.map((element) => element['User']).first!['password'];
 
-    if (!bcrypt.checkHash(data['password'], password)) {
-      return Response.forbidden(jsonEncode({'error': 'Senha invalida'}));
+    try {
+      await authRepository.updatePassword(
+        token,
+        data['password'],
+        data['newPassword'],
+      );
+      return Response.ok(jsonEncode({'message': 'ok'}));
+    } on AuthException catch (e) {
+      return Response(e.statusCode, body: e.toJson());
     }
-    final queryUpdate = 'UPDATE "User" SET password=@password WHERE id=@id;';
-    await database.query(queryUpdate, variables: {
-      'id': payload['id'],
-      'password': bcrypt.generateHash(data['newPassword'])
-    });
-    return Response.ok(jsonEncode({'message': 'ok'}));
-  }
-
-  int _determineExpiration(Duration duration) {
-    final expiresDate = DateTime.now().add(duration);
-    final expiresIn =
-        Duration(milliseconds: expiresDate.millisecondsSinceEpoch);
-    return expiresIn.inSeconds;
   }
 }
