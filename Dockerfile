@@ -13,6 +13,7 @@ RUN dart compile exe bin/backend_shelf.dart -o bin/server
 FROM scratch
 COPY --from=build /runtime/ /
 COPY --from=build /app/bin/server /
+COPY specs/ /specs/
 
 EXPOSE 4466
 CMD ["/server"]

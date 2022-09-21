@@ -13,11 +13,23 @@ class UserResource extends Resource {
         Route.get('/user', _getAllUser, middlewares: [AuthGuard()]),
         Route.get('/user/:id', _getAllUserById, middlewares: [AuthGuard()]),
         Route.post('/user', _createUser),
+        Route.post('/teste', teste),
         Route.put('/user', _updateUser, middlewares: [AuthGuard()]),
         Route.delete('/user/:id', _deleteUser, middlewares: [
           AuthGuard(roles: ['admin'])
         ]),
       ];
+
+  FutureOr<Response> teste(ModularArguments args) {
+    final dados = args.data;
+    if (dados.isEmpty) {
+      return Response.ok('em branco');
+    }
+    return Response.ok('New teste added: $dados');
+  }
+
+  FutureOr<Response> getUser(ModularArguments args) =>
+      Response.ok('user id ${args.params['id']}');
 
   FutureOr<Response> _getAllUser(Injector injector) async {
     final database = injector.get<RemoteDatabase>();
@@ -42,12 +54,14 @@ class UserResource extends Resource {
   FutureOr<Response> _createUser(
       ModularArguments arguments, Injector injector) async {
     final bcrypt = injector.get<BCryptService>();
+
     final userParams = (arguments.data as Map).cast<String, dynamic>();
+
     userParams['password'] = bcrypt.generateHash(userParams['password']);
     //userParams.remove('id');
     final database = injector.get<RemoteDatabase>();
     final query = await database.query(
-      'INSERT INTO "User" (name, email, password, gender, age, weigth, heigth, goal) VALUES (@name, @email, @password, @gender, @age, @weigth, @heigth, @goal) RETURNING id, name, email, role;',
+      'INSERT INTO "User" (name, email, password, gender, age, weigth, heigth, goal) VALUES (@name, @email, @password, @gender, @age, @weigth, @heigth, @goal) RETURNING id, name, email;',
       variables: userParams,
     );
     final userMap = query.map((e) => e['User']).first;
